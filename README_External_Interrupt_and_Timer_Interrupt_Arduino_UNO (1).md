@@ -18,10 +18,7 @@ To implement External Interrupt and Timer Interrupt using an Arduino UNO and obs
 - Jumper Wires
 
 # Circuit Diagram
-
----
-To upload
----
+<img width="1076" height="593" alt="image" src="https://github.com/user-attachments/assets/627b718e-2384-42d8-aade-b83e65d81e02" />
 
 # Procedure
 
@@ -69,19 +66,74 @@ To upload
 3. Record the observations.
 
 # Program
+```
+volatile bool externalFlag = false;
+volatile bool timerFlag = false;
 
----
-To upload
----
+void setup()
+{
+  pinMode(13, OUTPUT);
+  pinMode(12, OUTPUT);
+  pinMode(2, INPUT_PULLUP);
 
+  // External interrupt on INT0 (D2)
+  attachInterrupt(digitalPinToInterrupt(2), externalISR, FALLING);
+
+  // Timer1 setup
+  noInterrupts();
+
+  TCCR1A = 0;
+  TCCR1B = 0;
+
+  // CTC mode
+  TCCR1B |= (1 << WGM12);
+
+  // Prescaler = 1024
+  TCCR1B |= (1 << CS12) | (1 << CS10);
+
+  // 16 MHz / 1024 = 15625 counts/sec
+  // 15625 counts = 1 second
+  OCR1A = 15624;
+
+  // Enable Timer1 Compare Match A interrupt
+  TIMSK1 |= (1 << OCIE1A);
+
+  interrupts();
+}
+
+void loop()
+{
+  if (externalFlag)
+  {
+    externalFlag = false;
+
+    // External interrupt action
+    digitalWrite(13, !digitalRead(13));
+  }
+
+  if (timerFlag)
+  {
+    timerFlag = false;
+
+    // Timer interrupt action
+    digitalWrite(12, !digitalRead(12));
+  }
+}
+
+// External Interrupt Service Routine
+void externalISR()
+{
+  externalFlag = true;
+}
+
+// Timer1 Compare Match Interrupt Service Routine
+ISR(TIMER1_COMPA_vect)
+{
+  timerFlag = true;
+}
+```
 # Observation
-
-| Activity | Expected Output |
-|----------|-----------------|
-| Board Powered ON | System initializes |
-| Push Button Pressed | External ISR executes immediately |
-| Timer Running | Timer ISR executes periodically |
-| LED | Toggles/blinks according to ISR |
+<img width="899" height="1599" alt="WhatsApp Image 2026-09-23 at 12 33 58" src="https://github.com/user-attachments/assets/5d44551a-9283-423f-8399-c2df8b9c172f" />
 
 # Result
 
